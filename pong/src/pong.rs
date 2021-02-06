@@ -1,30 +1,64 @@
 use amethyst::{
     assets::{AssetStorage, Loader, Handle},
-    core::transform::Transform,
+		core::{
+			transform::Transform,
+			timing::Time,
+		},
     ecs::{Component, DenseVecStorage},
     prelude::*,
     renderer::{Camera, ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture},
 };
 
 // 構造体をこちらで管理
-pub struct Pong;
+#[derive(Default)]
+pub struct Pong {
+	//　開始前タイマー
+	ball_spawn_timer: Option<f32>,
+	sprite_sheet_handle: Option<Handle<SpriteSheet>>,
+}
+
 impl SimpleState for Pong {
 	//ゲームスタート時の構造
 	fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
 		// world作成
 		let world = data.world;
 
+		//発火まで１秒を待つ
+		self.ball_spawn_timer.replace(1.0);
+
 		// 画像の読み込み
 		let sprite_sheet_handle = load_sprite_sheet(world);
+		self.sprite_sheet_handle.replace(load_sprite_sheet(world));
 
-		// パドルを読み込む前にストレージの設定
-		// world.register::<Paddle>();
-
+		world.register::<Ball>();
 		// パドルの作成
 		init_paddles(world, sprite_sheet_handle);
 
+		// キャラクターの作成
+		// init_person(worl, sprite_sheet_handle)
+
 		// カメラの状態作成
 		init_camera(world);
+	}
+
+	// 起動後すぐの挙動 一度だけ発火される
+	fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
+		if let Some(mut timer) = self.ball_spawn_timer.take() {
+			// If the timer isn't expired yet, subtract the time that passed since the last update.
+			{
+					let time = data.world.fetch::<Time>();
+					timer -= time.delta_seconds();
+			}
+			if timer <= 0.0 {
+					// When timer expire, spawn the ball
+					// ボール作成のタイミングがupdate後にずれる もともとはstartに
+					init_ball(data.world, self.sprite_sheet_handle.clone().unwrap());
+			} else {
+					// If timer is not expired yet, put it back onto the state.
+					self.ball_spawn_timer.replace(timer);
+			}
+		}
+    Trans::None
 	}
 }
 
@@ -126,4 +160,36 @@ fn load_sprite_sheet(world: &mut World) -> Handle<SpriteSheet> {
 			(),
 			&sprite_sheet_store,
 	)
+}
+
+pub const BALL_VELOCITY_X: f32 = 75.0;
+pub const BALL_VELOCITY_Y: f32 = 50.0;
+pub const BALL_RADIUS: f32 = 2.0;
+
+pub struct Ball {
+	pub velocity: [f32; 2],
+	pub radius: f32,
+}
+
+impl Component for Ball {
+	type Storage = DenseVecStorage<Self>;
+}
+
+fn init_ball(world: &mut World, sprite_sheet_handle: Handle<SpriteSheet>) {
+	// Create the translation.
+	let mut local_transform = Transform::default();
+	local_transform.set_translation_xyz(ARENA_WIDTH / 2.0, ARENA_HEIGHT / 2.0, 0.0);
+
+	// Assign the sprite for the ball. The ball is the second sprite in the sheet.
+	let sprite_render = SpriteRender::new(sprite_sheet_handle, 1);
+
+	world
+			.create_entity()
+			.with(sprite_render)
+			.with(Ball {
+					radius: BALL_RADIUS,
+					velocity: [BALL_VELOCITY_X, BALL_VELOCITY_Y],
+			})
+			.with(local_transform)
+			.build();
 }
