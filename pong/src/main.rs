@@ -11,7 +11,7 @@ use amethyst::{
 
 // pong.rsからデータを読み込む
 // mod = moduleの意
-mod zeus;
+mod pong;
 mod systems;
 
 use crate::pong::Pong;
