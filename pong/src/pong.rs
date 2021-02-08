@@ -9,6 +9,9 @@ use amethyst::{
     renderer::{Camera, ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture},
 };
 
+// キャラクターデータ
+mod characters;
+
 // 構造体をこちらで管理
 #[derive(Default)]
 pub struct Pong {
@@ -35,7 +38,7 @@ impl SimpleState for Pong {
 		init_paddles(world, sprite_sheet_handle);
 
 		// キャラクターの作成
-		// init_person(worl, sprite_sheet_handle)
+		characters::init_hero(world);
 
 		// カメラの状態作成
 		init_camera(world);
