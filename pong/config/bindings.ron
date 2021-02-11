@@ -1,7 +1,11 @@
 (
   axes: {
-    "left_paddle": Emulated(pos: Key(W), neg: Key(S)),
-    "right_paddle": Emulated(pos: Key(Up), neg: Key(Down)),
+    "brave_x": Emulated(
+      pos: Key(W), neg: Key(S)
+    ),
+    "brave_y": Emulated(
+      pos: Key(A), neg: Key(D)
+    ),
   },
   actions: {},
 )
